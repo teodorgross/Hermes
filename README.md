@@ -106,10 +106,17 @@ sudo dnf install cmake ninja-build gcc gcc-c++ git wget npm boost-devel \
   qt6-qtsvg-devel wayland-devel wayland-protocols-devel \
   cuda-nvcc cuda-cudart-devel cuda-gcc
 
-# the kernel module (see the Hermes-KMS fork)
+# the kernel module — NOT bundled with the release (a kernel module must be
+# built against your exact running kernel). DKMS does that automatically and
+# rebuilds it on every kernel update; you need `dkms` + kernel headers
+# (Fedora: kernel-devel; Debian/Ubuntu: linux-headers-$(uname -r)).
 git clone https://github.com/teodorgross/Hermes-KMS.git
-cd Hermes-KMS && make
-sudo insmod kernel/hermes-kms/hermes_kms.ko initial_enabled=0
+cd Hermes-KMS
+sudo make dkms-install
+sudo modprobe hermes_kms initial_enabled=0
+# load it on every boot:
+sudo install -Dm644 packaging/modules-load.d/hermes-kms.conf /etc/modules-load.d/hermes-kms.conf
+printf '%s\n' 'options hermes_kms initial_enabled=0' | sudo tee /etc/modprobe.d/hermes-kms.conf
 cd ..
 
 # Hermes itself
